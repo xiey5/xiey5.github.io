@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>Java 内存区域 | 个人博客</title><meta name="keywords" content="笔记,JVM,面试"><meta name="author" content="xieyi,xieyi1233@gmail.com"><meta name="copyright" content="xieyi"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Java 内存区域Java 内存区域的划分之所有网上有这么多不同的言论，主要是因为有两个原因：  Java 版本不同；  虚拟机规范与实现上的不同。   其中 Java 版本的不同导致的差异很好理解，而第二点主要要分清楚虚拟机规范和各个虚拟机实现，要明白 “公有设计、私有实现”的理念。即使我们绝大部分情况下接触都是 HotSpot 虚拟机，也不可将两者完全等同。 这里提到的内存区域都是运行时的内存">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 内存区域">
+<meta property="og:url" content="http://example.com/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/index.html">
+<meta property="og:site_name" content="个人博客">
+<meta property="og:description" content="Java 内存区域Java 内存区域的划分之所有网上有这么多不同的言论，主要是因为有两个原因：  Java 版本不同；  虚拟机规范与实现上的不同。   其中 Java 版本的不同导致的差异很好理解，而第二点主要要分清楚虚拟机规范和各个虚拟机实现，要明白 “公有设计、私有实现”的理念。即使我们绝大部分情况下接触都是 HotSpot 虚拟机，也不可将两者完全等同。 这里提到的内存区域都是运行时的内存">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+<meta property="article:published_time" content="2022-07-24T04:46:48.925Z">
+<meta property="article:modified_time" content="2022-07-24T09:21:13.936Z">
+<meta property="article:author" content="xieyi">
+<meta property="article:tag" content="笔记">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="面试">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":true,"languages":{"hits_empty":"找不到您查询的内容：${query}"}},
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/flickr-justified-gallery/dist/fjGallery.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Java 内存区域',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2022-07-24 17:21:13'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+    win.saveToLocal = {
+      set: function setWithExpiry(key, value, ttl) {
+        if (ttl === 0) return
+        const now = new Date()
+        const expiryDay = ttl * 86400000
+        const item = {
+          value: value,
+          expiry: now.getTime() + expiryDay,
+        }
+        localStorage.setItem(key, JSON.stringify(item))
+      },
+
+      get: function getWithExpiry(key) {
+        const itemStr = localStorage.getItem(key)
+
+        if (!itemStr) {
+          return undefined
+        }
+        const item = JSON.parse(itemStr)
+        const now = new Date()
+
+        if (now.getTime() > item.expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return item.value
+      }
+    }
+  
+    win.getScript = url => new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.async = true
+      script.onerror = reject
+      script.onload = script.onreadystatechange = function() {
+        const loadState = this.readyState
+        if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+        script.onload = script.onreadystatechange = null
+        resolve()
+      }
+      document.head.appendChild(script)
+    })
+  
+      win.activateDarkMode = function () {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = function () {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          if (t === 'dark') activateDarkMode()
+          else if (t === 'light') activateLightMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+    const detectApple = () => {
+      if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+    })(window)</script><meta name="generator" content="Hexo 6.2.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">个人博客</a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 文章</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">Java 内存区域</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2022-07-24T04:46:48.925Z" title="发表于 2022-07-24 12:46:48">2022-07-24</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2022-07-24T09:21:13.936Z" title="更新于 2022-07-24 17:21:13">2022-07-24</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/JVM/">JVM</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.6k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="Java 内存区域"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span><span class="post-meta-separator">|</span><span class="post-meta-commentcount"><i class="far fa-comments fa-fw post-meta-icon"></i><span class="post-meta-label">评论数:</span><a href="/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/#post-comment" itemprop="discussionUrl"><span class="valine-comment-count" data-xid="/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/" itemprop="commentCount"><i class="fa-solid fa-spinner fa-spin"></i></span></a></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="Java-内存区域"><a href="#Java-内存区域" class="headerlink" title="Java 内存区域"></a>Java 内存区域</h1><p>Java 内存区域的划分之所有网上有这么多不同的言论，主要是因为有两个原因：</p>
+<ol>
+<li><p>Java 版本不同；</p>
+</li>
+<li><p>虚拟机规范与实现上的不同。</p>
+</li>
+</ol>
+<p>其中 Java 版本的不同导致的差异很好理解，而第二点主要要分清楚虚拟机规范和各个虚拟机实现，要明白 “公有设计、私有实现”的理念。即使我们绝大部分情况下接触都是 HotSpot 虚拟机，也不可将两者完全等同。</p>
+<p>这里提到的内存区域都是运行时的内存区域，一个 Class 文件一定需要虚拟机的加载才能将对应数据存放到各个区域之间。</p>
+<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>当前线程所执行的字节码的行号指示器。是线程私有的。不会抛出 OOM 异常。</p>
+<h3 id="Java-虚拟机栈"><a href="#Java-虚拟机栈" class="headerlink" title="Java 虚拟机栈"></a>Java 虚拟机栈</h3><p>虚拟机栈描述的是 Java 方法执行的线程内存模型。是线程私有的。每个方法被执行的时候，JVM会创建一个栈帧，用于存储局部变量表、操作数栈、动态链接、方法出口等信息。方法执行完毕后，该栈帧就会出栈。会抛出OOM异常和 StackOverflowError。</p>
+<p>StackOverflowError: 线程请求的栈深度太深（e.g. 无限递归）；</p>
+<p>OOM：栈扩展无法申请到内存，注意 HotSpot 虚拟机并不支持栈扩展。但是 HotSpot 虚拟机也有可能会抛出 OOM 异常，当程序无限创建新线程时，进程内存不够了就会出现OOM。</p>
+<h4 id="局部变量表"><a href="#局部变量表" class="headerlink" title="局部变量表"></a>局部变量表</h4><p>存放这种编译器可知的各种基本数据结构、对象引用（可能是指针，也可能是句柄）、returnAddress类型。</p>
+<p>局部变量表的存储空间以局部变量槽来表示，64位的long和double类型需要两个槽，其余只需要一个，虚拟机规范并没有指定槽的具体实现。</p>
+<h2 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h2><p>作用和 Java 虚拟机栈类似，只不过服务的是本地方法（Native方法）。</p>
+<h2 id="Java-堆"><a href="#Java-堆" class="headerlink" title="Java 堆"></a>Java 堆</h2><p>堆管理着绝大部分对象实例和数组，是线程共享的。会抛出OOM异常。</p>
+<p>虚拟机规范：所有的对象实例以及数组都应当在堆上分配。</p>
+<p>HotSpot 实现：并不是完全遵循虚拟机规范，如栈上分配，标量替换。</p>
+<h2 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h2><p>虚拟机规范：用于存储被虚拟机加载的类型信息、常量、静态变量、即时编译器变异后的缓存代码等数据。是线程共享的。会抛出OOM异常。</p>
+<p>HotSpot 实现：</p>
+<ul>
+<li><p>jdk1.7 之前是用永久代实现的方法区，能够管理java堆一样管理这段内存，不用专门为方法区编写内存管理工作的代码；</p>
+</li>
+<li><p>jdk1.7 中，将字符串常量池、静态变量等移动到堆中；</p>
+</li>
+<li><p>jdk1.8 中，采用在本地内存中实现的元空间彻底代替永久代。</p>
+</li>
+</ul>
+<h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p>是方法区一部分。Class文件中的常量池表会存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后存放方法到方法区的运行时常量池中。</p>
+<p>运行时常量池最重要的特性就是动态性，除了编译器产生的常量之外，运行期产生的常量（如String::intern）也会存放在运行时常量池。</p>
+<p>常量池是为了避免频繁的创建和销毁对象而影响系统性能，实现了对象的共享，节省了内存空间。</p>
+<h2 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h2><p>并不是java虚拟机规范中的定义的内存区域。主要是 jdk1.4 中新加入 NIO 类，引入了一种基于通道和缓冲区的I&#x2F;O方式，使用Native方法直接分配堆外内存。避免了在Java堆和Native对中来回复制数据。也会抛出OOM。</p>
+<h1 id="面试真题（持续补充）"><a href="#面试真题（持续补充）" class="headerlink" title="面试真题（持续补充）"></a>面试真题（持续补充）</h1><h2 id="什么时候栈会出现OOM异常？"><a href="#什么时候栈会出现OOM异常？" class="headerlink" title="什么时候栈会出现OOM异常？"></a>什么时候栈会出现OOM异常？</h2><blockquote>
+<p>答：如果是支持栈扩展的虚拟机实现，如远古时代的 Classic 虚拟机，如果程序中定义了大量的本地变量，导致此方法帧中本地变量表的查高难度很大，超过了虚拟机指定的栈容量（通过 -oss 指定），此时会出现OOM异常。</p>
+<p>如果是不支持栈扩展的虚拟机实现，如 HotSpot 虚拟机实现，如果程序无限创建新线程并且线程一直不回收，由于单个进程内存是有上限的，最终会导致创建线程时无法申请到足够的内存，此时会出现OOM异常。</p>
+</blockquote>
+<h2 id="请详细说一下-Java-内存结构"><a href="#请详细说一下-Java-内存结构" class="headerlink" title="请详细说一下 Java 内存结构"></a>请详细说一下 Java 内存结构</h2><blockquote>
+<p>答：Java 虚拟机规范中定义的 Java 内存结构可以分为程序计数器、Java虚拟机栈、本地方法栈、Java堆、方法区。其中程序计数器、Java虚拟机栈、本地方法栈是线程私有的，Java堆、方法区是线程共享的。</p>
+<p>程序计数器表示的是当前线程所执行的字节码的行号指示器。</p>
+<p>Java虚拟机栈描述的是 Java 方法执行的线程内存模型。</p>
+<p>本地方法栈描述的是 Native 方法执行的线程内存模型。</p>
+<p>Java堆存放着绝大部分的对象实例和数组。</p>
+<p>方法区存放的是被虚拟机加载的类型信息、常量、静态变量等信息。</p>
+<p>除此之外，Java虚拟机规范中没有定义但是实际Java程序用到的内存区域叫堆外内存或者说直接内存，主要是 jdk1.4 引入的 NIO 类所使用。</p>
+<p>需要注意的是，Java 虚拟机规范中定义的内存结构很有可能和我们常见的HotSpot虚拟机具体实现的内存结构有些差异。比如：在jdk1.7之前，HotSpot采用永久代实现方法区，而且jdk1.8时更改为了用元空间实现方法区。</p>
+<p>另外，由于堆中是垃圾收集的主要场所，很多垃圾收集器会采用分代思想管理堆内存，但是这属于各个垃圾收集器自己的具体实现，而和 Java 虚拟机规范无关。</p>
+</blockquote>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="http://example.com">xieyi</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/">http://example.com/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="http://example.com" target="_blank">个人博客</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E7%AC%94%E8%AE%B0/">笔记</a><a class="post-meta__tags" href="/tags/JVM/">JVM</a><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95/">面试</a></div><div class="post_share"><div class="social-share" data-image="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-sites="wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2022/07/24/JVM/HotSpot%E5%AF%B9%E8%B1%A1/"><img class="prev-cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">HotSpot 对象</div></div></a></div><div class="next-post pull-right"><a href="/2022/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%9B%BE%E8%A7%A3http/"><img class="next-cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">图解HTTP笔记</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><div><a href="/2022/07/24/JVM/HotSpot%E5%AF%B9%E8%B1%A1/" title="HotSpot 对象"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-24</div><div class="title">HotSpot 对象</div></div></a></div><div><a href="/2022/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%9B%BE%E8%A7%A3http/" title="图解HTTP笔记"><img class="cover" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="cover"><div class="content is-center"><div class="date"><i class="far fa-calendar-alt fa-fw"></i> 2022-07-23</div><div class="title">图解HTTP笔记</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div><div id="comment-switch"><span class="first-comment">Valine</span><span class="switch-btn"></span><span class="second-comment">Disqus</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div><div><div id="disqus_thread"></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">xieyi</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xiey5"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/xiey5" target="_blank" title="Github"><i class="fab fa-github"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java-%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F"><span class="toc-number">1.</span> <span class="toc-text">Java 内存区域</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="toc-number">1.0.1.</span> <span class="toc-text">程序计数器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Java-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88"><span class="toc-number">1.0.2.</span> <span class="toc-text">Java 虚拟机栈</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F%E8%A1%A8"><span class="toc-number">1.0.2.1.</span> <span class="toc-text">局部变量表</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88"><span class="toc-number">1.1.</span> <span class="toc-text">本地方法栈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Java-%E5%A0%86"><span class="toc-number">1.2.</span> <span class="toc-text">Java 堆</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA"><span class="toc-number">1.3.</span> <span class="toc-text">方法区</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="toc-number">1.3.1.</span> <span class="toc-text">运行时常量池</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98"><span class="toc-number">1.4.</span> <span class="toc-text">直接内存</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E9%9D%A2%E8%AF%95%E7%9C%9F%E9%A2%98%EF%BC%88%E6%8C%81%E7%BB%AD%E8%A1%A5%E5%85%85%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">面试真题（持续补充）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E6%A0%88%E4%BC%9A%E5%87%BA%E7%8E%B0OOM%E5%BC%82%E5%B8%B8%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">什么时候栈会出现OOM异常？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%B7%E8%AF%A6%E7%BB%86%E8%AF%B4%E4%B8%80%E4%B8%8B-Java-%E5%86%85%E5%AD%98%E7%BB%93%E6%9E%84"><span class="toc-number">2.2.</span> <span class="toc-text">请详细说一下 Java 内存结构</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/24/JVM/HotSpot%E5%AF%B9%E8%B1%A1/" title="HotSpot 对象">HotSpot 对象</a><time datetime="2022-07-24T09:16:00.375Z" title="发表于 2022-07-24 17:16:00">2022-07-24</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/" title="Java 内存区域">Java 内存区域</a><time datetime="2022-07-24T04:46:48.925Z" title="发表于 2022-07-24 12:46:48">2022-07-24</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%9B%BE%E8%A7%A3http/" title="图解HTTP笔记">图解HTTP笔记</a><time datetime="2022-07-23T08:35:52.813Z" title="发表于 2022-07-23 16:35:52">2022-07-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/07/23/hello-world/" title="Hello World">Hello World</a><time datetime="2022-07-23T08:21:07.559Z" title="发表于 2022-07-23 16:21:07">2022-07-23</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2022 By xieyi</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div></div></div><div id="search-mask"></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.min.js"></script><script src="/js/search/local-search.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    const valine = new Valine(Object.assign({
+      el: '#vcomment',
+      appId: '5cNzXufCE4PDQDrE2Lt4oDsg-gzGzoHsz',
+      appKey: '5zliROaohGRsIrkk5PDBQO6Y',
+      avatar: 'monsterid',
+      serverURLs: 'https://5cnzxufc.lc-cn-n1-shared.com',
+      emojiMaps: "",
+      path: window.location.pathname,
+      visitor: false
+    }, null))
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
+}
+
+if ('Valine' === 'Valine' || !false) {
+  if (false) btf.loadComment(document.getElementById('vcomment'),loadValine)
+  else setTimeout(loadValine, 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script><script>function loadDisqus () {
+  var disqus_config = function () {
+    this.page.url = 'http://example.com/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/'
+    this.page.identifier = '/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/'
+    this.page.title = 'Java 内存区域'
+  };
+
+  window.disqusReset = () => {
+    DISQUS.reset({
+      reload: true,
+      config: disqus_config
+    })
+  }
+
+  if (window.DISQUS) disqusReset()
+  else {
+    (function() { 
+      var d = document, s = d.createElement('script');
+      s.src = 'https://.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  }
+
+  document.getElementById('darkmode').addEventListener('click', () => {
+    setTimeout(() => window.disqusReset(), 200)
+  })
+}
+
+if ('Valine' === 'Disqus' || !false) {
+  if (false) btf.loadComment(document.getElementById('disqus_thread'), loadDisqus)
+  else loadDisqus()
+} else {
+  function loadOtherComment () {
+    loadDisqus()
+  }
+}
+</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

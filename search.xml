@@ -4,6 +4,62 @@
   
     
     <entry>
+      <title>HotSpot 对象</title>
+      <link href="/2022/07/24/JVM/HotSpot%E5%AF%B9%E8%B1%A1/"/>
+      <url>/2022/07/24/JVM/HotSpot%E5%AF%B9%E8%B1%A1/</url>
+      
+        <content type="html"><![CDATA[<p>本章节涉及到的对象均是在 HotSpot 虚拟机的 Java 堆中。 </p><h1 id="对象的创建"><a href="#对象的创建" class="headerlink" title="对象的创建"></a>对象的创建</h1><p>两种创建方式：</p><ol><li><p>如果内存布局是整齐的，那么只需要在以分配和未分配的内存分割点加一个指针，分配内存仅仅只需要将该指针往后移动需要分配对象的大小的位置即可。这种方式被称之为 <code>指针碰撞</code>；</p></li><li><p>如何内存布局是不整齐的，那么 JVM 必须维护一个列表，用来记录哪些内存块是可用。的，分配内存时，需要从列表中找到对应的内存块来分配。这种方式被称之为 <code>空闲列表</code>。</p></li></ol><p>内存布局是否整齐是由各个垃圾收集器采用的垃圾收集算法决定的。不过即使内存布局是不整齐的，也是可以通过预先分配一大块空闲内存块，然后在这块区域采用 <code>指针碰撞</code> 方式分配内存。</p><p>对象的内存分配在堆上，那么必然要考虑并发问题。两种方式解决：</p><ol><li><p>采用CAS+失败重拾来保证更新操作的原子性；</p></li><li><p>按照线程来分隔不同的空间，每个空间变成线程私有的，即每个线程在堆中预先分配一小块内存，这块内存称为 <code>本地线程分配缓冲（Thread Local Allocation Buffer, TLAB）</code>，该选项可以通过 <code>-XX:+/-UseTLAB</code> 来设定。</p></li></ol><p>内存分配完之后，JVM需要堆对象头进行不要的设置，再之后就是执行构造函数，至此一个对象就已经创建完成。</p><h1 id="对象的内存布局"><a href="#对象的内存布局" class="headerlink" title="对象的内存布局"></a>对象的内存布局</h1><p>对象的存储布局可以划分为三个部分：对象头、实例数据、对齐填充。</p><h2 id="对象头"><a href="#对象头" class="headerlink" title="对象头"></a>对象头</h2><p>对象头分为两大部分数据：</p><ul><li><p>存储对象自身的运行时数据。如 HashCode、GC分代年龄、锁状态标志、线程持有的锁、偏向线程ID等等。</p></li><li><p>类型指针，及对象指向它的类型元数据的指针。（并不是所有虚拟机都有）</p></li></ul><h2 id="实例数据"><a href="#实例数据" class="headerlink" title="实例数据"></a>实例数据</h2><p>对象真正存储的有效信息。</p><h2 id="对齐填充"><a href="#对齐填充" class="headerlink" title="对齐填充"></a>对齐填充</h2><p>HotSpot 虚拟机的自动内存管理要求对象起始地址必须是8字节的整数倍，也就是说所有对象的大小必须是8字节的整数倍，如果对象头+实例数据不满足要求，那么就要自动加上对齐填充。</p><h1 id="对象的访问定位"><a href="#对象的访问定位" class="headerlink" title="对象的访问定位"></a>对象的访问定位</h1><p>Java程序会通过栈上的 reference 数据来操作堆上的具体对象。reference 类型在 Java虚拟机规范中并没有定义这个引用应该通过什么方式去定位和访问，所以各个虚拟机有不同的实现，主流的访问方式有两种（HotSpot主要使用直接指针方式）：</p><ol><li><p>使用句柄池：移动对象时（垃圾收集非常常见动作）无需更改 reference 的指向，仅仅需要改变句柄池的指向。</p><img title="" src="file:///C:/Users/xieyi/AppData/Roaming/marktext/images/2022-07-24-17-13-17-image.png" alt="" data-align="inline"></li><li><p>使用直接指针：少了一次转发，速度更快。</p><img title="" src="https://raw.githubusercontent.com/xiey5/hexo-image/main/%E7%9B%B4%E6%8E%A5%E6%8C%87%E9%92%88.jpg" alt="" data-align="inline"></li></ol><p>    </p>]]></content>
+      
+      
+      <categories>
+          
+          <category> JVM </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 笔记 </tag>
+            
+            <tag> JVM </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>Java 内存区域</title>
+      <link href="/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/"/>
+      <url>/2022/07/24/JVM/Java%20%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F/</url>
+      
+        <content type="html"><![CDATA[<h1 id="Java-内存区域"><a href="#Java-内存区域" class="headerlink" title="Java 内存区域"></a>Java 内存区域</h1><p>Java 内存区域的划分之所有网上有这么多不同的言论，主要是因为有两个原因：</p><ol><li><p>Java 版本不同；</p></li><li><p>虚拟机规范与实现上的不同。</p></li></ol><p>其中 Java 版本的不同导致的差异很好理解，而第二点主要要分清楚虚拟机规范和各个虚拟机实现，要明白 “公有设计、私有实现”的理念。即使我们绝大部分情况下接触都是 HotSpot 虚拟机，也不可将两者完全等同。</p><p>这里提到的内存区域都是运行时的内存区域，一个 Class 文件一定需要虚拟机的加载才能将对应数据存放到各个区域之间。</p><h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>当前线程所执行的字节码的行号指示器。是线程私有的。不会抛出 OOM 异常。</p><h3 id="Java-虚拟机栈"><a href="#Java-虚拟机栈" class="headerlink" title="Java 虚拟机栈"></a>Java 虚拟机栈</h3><p>虚拟机栈描述的是 Java 方法执行的线程内存模型。是线程私有的。每个方法被执行的时候，JVM会创建一个栈帧，用于存储局部变量表、操作数栈、动态链接、方法出口等信息。方法执行完毕后，该栈帧就会出栈。会抛出OOM异常和 StackOverflowError。</p><p>StackOverflowError: 线程请求的栈深度太深（e.g. 无限递归）；</p><p>OOM：栈扩展无法申请到内存，注意 HotSpot 虚拟机并不支持栈扩展。但是 HotSpot 虚拟机也有可能会抛出 OOM 异常，当程序无限创建新线程时，进程内存不够了就会出现OOM。</p><h4 id="局部变量表"><a href="#局部变量表" class="headerlink" title="局部变量表"></a>局部变量表</h4><p>存放这种编译器可知的各种基本数据结构、对象引用（可能是指针，也可能是句柄）、returnAddress类型。</p><p>局部变量表的存储空间以局部变量槽来表示，64位的long和double类型需要两个槽，其余只需要一个，虚拟机规范并没有指定槽的具体实现。</p><h2 id="本地方法栈"><a href="#本地方法栈" class="headerlink" title="本地方法栈"></a>本地方法栈</h2><p>作用和 Java 虚拟机栈类似，只不过服务的是本地方法（Native方法）。</p><h2 id="Java-堆"><a href="#Java-堆" class="headerlink" title="Java 堆"></a>Java 堆</h2><p>堆管理着绝大部分对象实例和数组，是线程共享的。会抛出OOM异常。</p><p>虚拟机规范：所有的对象实例以及数组都应当在堆上分配。</p><p>HotSpot 实现：并不是完全遵循虚拟机规范，如栈上分配，标量替换。</p><h2 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h2><p>虚拟机规范：用于存储被虚拟机加载的类型信息、常量、静态变量、即时编译器变异后的缓存代码等数据。是线程共享的。会抛出OOM异常。</p><p>HotSpot 实现：</p><ul><li><p>jdk1.7 之前是用永久代实现的方法区，能够管理java堆一样管理这段内存，不用专门为方法区编写内存管理工作的代码；</p></li><li><p>jdk1.7 中，将字符串常量池、静态变量等移动到堆中；</p></li><li><p>jdk1.8 中，采用在本地内存中实现的元空间彻底代替永久代。</p></li></ul><h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p>是方法区一部分。Class文件中的常量池表会存放编译期生成的各种字面量和符号引用，这部分内容将在类加载后存放方法到方法区的运行时常量池中。</p><p>运行时常量池最重要的特性就是动态性，除了编译器产生的常量之外，运行期产生的常量（如String::intern）也会存放在运行时常量池。</p><p>常量池是为了避免频繁的创建和销毁对象而影响系统性能，实现了对象的共享，节省了内存空间。</p><h2 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h2><p>并不是java虚拟机规范中的定义的内存区域。主要是 jdk1.4 中新加入 NIO 类，引入了一种基于通道和缓冲区的I&#x2F;O方式，使用Native方法直接分配堆外内存。避免了在Java堆和Native对中来回复制数据。也会抛出OOM。</p><h1 id="面试真题（持续补充）"><a href="#面试真题（持续补充）" class="headerlink" title="面试真题（持续补充）"></a>面试真题（持续补充）</h1><h2 id="什么时候栈会出现OOM异常？"><a href="#什么时候栈会出现OOM异常？" class="headerlink" title="什么时候栈会出现OOM异常？"></a>什么时候栈会出现OOM异常？</h2><blockquote><p>答：如果是支持栈扩展的虚拟机实现，如远古时代的 Classic 虚拟机，如果程序中定义了大量的本地变量，导致此方法帧中本地变量表的查高难度很大，超过了虚拟机指定的栈容量（通过 -oss 指定），此时会出现OOM异常。</p><p>如果是不支持栈扩展的虚拟机实现，如 HotSpot 虚拟机实现，如果程序无限创建新线程并且线程一直不回收，由于单个进程内存是有上限的，最终会导致创建线程时无法申请到足够的内存，此时会出现OOM异常。</p></blockquote><h2 id="请详细说一下-Java-内存结构"><a href="#请详细说一下-Java-内存结构" class="headerlink" title="请详细说一下 Java 内存结构"></a>请详细说一下 Java 内存结构</h2><blockquote><p>答：Java 虚拟机规范中定义的 Java 内存结构可以分为程序计数器、Java虚拟机栈、本地方法栈、Java堆、方法区。其中程序计数器、Java虚拟机栈、本地方法栈是线程私有的，Java堆、方法区是线程共享的。</p><p>程序计数器表示的是当前线程所执行的字节码的行号指示器。</p><p>Java虚拟机栈描述的是 Java 方法执行的线程内存模型。</p><p>本地方法栈描述的是 Native 方法执行的线程内存模型。</p><p>Java堆存放着绝大部分的对象实例和数组。</p><p>方法区存放的是被虚拟机加载的类型信息、常量、静态变量等信息。</p><p>除此之外，Java虚拟机规范中没有定义但是实际Java程序用到的内存区域叫堆外内存或者说直接内存，主要是 jdk1.4 引入的 NIO 类所使用。</p><p>需要注意的是，Java 虚拟机规范中定义的内存结构很有可能和我们常见的HotSpot虚拟机具体实现的内存结构有些差异。比如：在jdk1.7之前，HotSpot采用永久代实现方法区，而且jdk1.8时更改为了用元空间实现方法区。</p><p>另外，由于堆中是垃圾收集的主要场所，很多垃圾收集器会采用分代思想管理堆内存，但是这属于各个垃圾收集器自己的具体实现，而和 Java 虚拟机规范无关。</p></blockquote>]]></content>
+      
+      
+      <categories>
+          
+          <category> JVM </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 笔记 </tag>
+            
+            <tag> JVM </tag>
+            
+            <tag> 面试 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>图解HTTP笔记</title>
       <link href="/2022/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%9B%BE%E8%A7%A3http/"/>
       <url>/2022/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E7%A1%80/%E5%9B%BE%E8%A7%A3http/</url>
