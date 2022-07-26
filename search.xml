@@ -5,10 +5,10 @@
     
     <entry>
       <title>JVM 垃圾收集器</title>
-      <link href="/2022/07/25/JVM/Java%20%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/"/>
-      <url>/2022/07/25/JVM/Java%20%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</url>
+      <link href="/2022/07/26/JVM/Java%20%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/"/>
+      <url>/2022/07/26/JVM/Java%20%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8/</url>
       
-        <content type="html"><![CDATA[<h1 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h1><h2 id="经典垃圾收集器"><a href="#经典垃圾收集器" class="headerlink" title="经典垃圾收集器"></a>经典垃圾收集器</h2><h2 id="低延迟垃圾收集器"><a href="#低延迟垃圾收集器" class="headerlink" title="低延迟垃圾收集器"></a>低延迟垃圾收集器</h2><h2 id="选择合适的垃圾收集器"><a href="#选择合适的垃圾收集器" class="headerlink" title="选择合适的垃圾收集器"></a>选择合适的垃圾收集器</h2>]]></content>
+        <content type="html"><![CDATA[<h1 id="经典垃圾收集器"><a href="#经典垃圾收集器" class="headerlink" title="经典垃圾收集器"></a>经典垃圾收集器</h1><p>”经典“是相对于jdk 11之后出现的低延迟垃圾收集器而言的，这些成熟的垃圾收集器仍然是 jdk8 之前重要的选择。在 G1 收集器出现之前，大多数垃圾收集器都采用分代思想，将java堆内存至少分为新生代和老年代，并且不同区域之间由于对象存活特性的不同，各个垃圾收集器针对的区域、选择的算法都有差异。</p><p>各个垃圾收集器之前能够组合的关系如下图，只有用线连起来的垃圾收集器才能够混合使用。其中CMS和Serial Old的连线是代表当CMS收集器发生失败的情况时，Serial Old将作为后备垃圾收集器。</p><p>其中 Serial、ParNew、CMS三种垃圾收集器使用HotSpot提供的分代框架，而其余垃圾收集器是自己额外实现的。所以CMS只能搭配Serial或者ParNew使用。</p><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E6%80%BB%E8%A7%88.png"></p><h2 id="新生代收集器"><a href="#新生代收集器" class="headerlink" title="新生代收集器"></a>新生代收集器</h2><h3 id="Serial收集器"><a href="#Serial收集器" class="headerlink" title="Serial收集器"></a>Serial收集器</h3><p>采用复制算法，在垃圾收集时必须暂停其余所有线程，并且垃圾收集工作线程是单线程的。该收集器优点是：简单而高效，消耗额外内存最少。</p><p>仍然适合客户端模式下的java程序。</p><h3 id="ParNew收集器"><a href="#ParNew收集器" class="headerlink" title="ParNew收集器"></a>ParNew收集器</h3><p>是 Serial 收集器的多线程版本，这里说的多线程，是在垃圾收集时的工作线程可以多线程并行工作。</p><p>采用复制算法，在垃圾收集时必须暂停其余所有线程。由于很多服务端模式下java应用在老年代使用了CMS收集器，所以该收集器是很多服务端模式下java应用采用的收集器。</p><h3 id="Parallel-Scavenge收集器"><a href="#Parallel-Scavenge收集器" class="headerlink" title="Parallel Scavenge收集器"></a>Parallel Scavenge收集器</h3><p>采用复制算法，其余的和ParNew收集器差不多。但是前面两种收集器不同，Parallel Scavenge收集器主要关注的是吞吐量，主要适合在后台运算而不需要太多的交互的分析任务。</p><p>该收集器也被称为”吞吐量优先收集器“，该收集器还提供了垃圾收集的自适应调节策略，只要开启了开关-XX：+UseAdaptiveSizePolicy，就不需要人工指定新生代大小、Eden和Servivor比例等细节参数，而是JVM会根据当前系统的运行情况，动态的设置这些参数达到一个比较好的吞吐量或者停顿时间。</p><h2 id="老年代收集器"><a href="#老年代收集器" class="headerlink" title="老年代收集器"></a>老年代收集器</h2><p>需要说明的是，以下三种收集器虽然理论上是仅针对老年代的收集器，但是只有CMS中才会有”仅针对老年代（称为Old GC或Major GC）“的收集，其余两种在进行老年代收集时同时会触发新生代收集（称为 Full GC）。所以，也只有CMS需要考虑老年代收集时，新生代的对象持有了老年代的对象这种跨代引用的情况，在这种情况下，需要将整个新生代作为GC Roots来进行扫描。</p><blockquote><p>老年代对象持有新生代对象引用的解决办法是引入记忆集和卡表的方法解决的。</p></blockquote><h3 id="Serial-Old收集器"><a href="#Serial-Old收集器" class="headerlink" title="Serial Old收集器"></a>Serial Old收集器</h3><p>采用标记整理算法，是Serial收集器的老年代版本。在垃圾收集时也是需要暂停用户线程，主要用于客户端模式下的java应用，或者服务端下的java应用作为cms收集器的预备方案。</p><h3 id="Parallel-Old收集器"><a href="#Parallel-Old收集器" class="headerlink" title="Parallel Old收集器"></a>Parallel Old收集器</h3><p>采用标记整理算法，时Parallel Scavenge收集器的老年代版本，是JDK 6之后才提供的，至此，如果是关注吞吐量的任务，可以采用 Parallel Scavenge + Parallel Old 收集器，这也是JDK 9之前的默认选择。</p><h3 id="CMS收集器"><a href="#CMS收集器" class="headerlink" title="CMS收集器"></a>CMS收集器</h3><p>采用标记-清除算法。CMS收集器主要关注的是停顿时长，适合基于浏览器的B&#x2F;S系统或者互联网网站。</p><p>主要分为四个步骤：</p><ol><li><p>初始标记：需要暂停用户线程，仅仅标记GC Roots能直接关联到的对象，速度很快；</p></li><li><p>并发标记：不需要暂停用户线程，遍历整个对象图，耗时较长；</p></li><li><p>重新标记：需要暂停用户线程，主要通过增量更新的方式标记第2步改动的对象；</p></li><li><p>并发清除：不需要暂停用户线程，清理掉已经被标记为垃圾的对象。</p></li></ol><p>总的来说，垃圾收集中最耗时的第二步和第四步是可以和用户线程并发进行，所以整体的暂停时长会比较短。工作的流程如图：</p><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/CMS.png"></p><p>缺点：</p><ol><li><p>需要占用一部分线程，导致程序的总吞吐量下降；</p></li><li><p>无法处理浮动垃圾，只能留在下一次垃圾收集清理；而且在并发清除的过程中，用户线程还在持续运行，JVM不得不留有一部分内存以供用户分配。问题在于，如果留有内存较大，那么GC的频率就会相应变高；如果留有内存较小，那么可能会导致用户线程无法分配到足够的内存导致启动预备方案：暂停所有用户线程，临时启动Serial Old收集器进行垃圾收集。</p></li><li><p>会有内存碎片产生；解决的方法时，如果不得不进行内存整理了，那么会暂停用线程来整理内存碎片，这样就会导致停顿时间的增加。</p></li></ol><h2 id="Garbage-First收集器"><a href="#Garbage-First收集器" class="headerlink" title="Garbage First收集器"></a>Garbage First收集器</h2><p>G1 收集器整体上采用的是标记-整理算法，局部采用的复制算法。</p><p>是JDK第一款出现的跨代收集器，开创了收集器面向局部收集的设计思路和基于Region的内存布局形式。G1 收集器的期望是，在停顿时间可控的前提下，去追求更高的吞吐量。相比于CMS，G1做出的重要思想转变就是将GC这种”大成本“的操作改为单次成本更小的操作。在G1之前，所有的垃圾收集器都是回收整个区域（新生代或者老年代或者整堆），而G1则是将整个堆划分为多个小区域，GC时，根据具体的选择算法，选择出回收收益最大的区域。虽然G1总体上仍然是基于分代的思想，但是单次回收的衡量标准不再是它属于哪个分代，而是基于收益的来确定回收的区域，这种模式被称为Mixed GC模式。</p><blockquote><p>选择算法更具体的处理思路是让G1收集器去跟踪各个Region里面的垃圾堆积的“价值”大小，价值即回收所获得的空间大小以及回收所需时间的经验值，然后在后台维护一个优先级列表，优先处理回收收益最大的Region。</p></blockquote><p>G1 Region布局：把连续的Java堆划分为多个大小相等的的独立区域（Region），每一个Region根据需要都可以扮演新生代的Eden，Survivor或者老年代空间；针对于大对象，会根据对象的大小有两种处理方式：</p><ul><li><p>如果对象大于整个Region的一半，那么会采用Humongous Region区域来存放；</p></li><li><p>如果对象大于整个Region，那么会采用多个连续的Humongous Region区域来存放。</p></li></ul><p>Humongous Region区域被看做是老年代的一部分。</p><p>G1的复杂之处：</p><ol><li><p>将Java堆中分成多个独立的Region之后，跨代引用如何解决？</p><p>思路仍然是通过记忆集和卡表的方式避免全堆作为GC Roots扫描，只是由于G1中的Region区域很多，需要单独为每一个Region建立卡表，并且卡表数据结构需要保存引用该Region的其余Region的地址。在Shenandoah中，采用了连接矩阵来实现此功能。</p><p>由于Region的数量明显会比分代的数量多得多，所以需要更大的额外内存来做这些工作，根据经验，G1额外内存会占据整堆的10%~20%。</p></li><li><p>如何在并发标记阶段保证收集线程和用户线程互不干扰？</p><p>和CMS不同，该过程产生的新的引用对象是通过原始快照（STAB）解决的。此外在每一个Region上，G1分配了两个名为TAMS（Top at Mark Start）指针，并发回收时分配新内存必须要在这两个指针的区域之间，这块区域里的对象会在当次GC中默认是存活的对象。另外，和CMS类似，如果内存回收速率赶不上内存分配速率，最终仍然会导致Full GC。</p></li><li><p>如何建立可预测的停顿时间模型？</p><p>G1收集器的停顿预测模型是以衰减均值（Decaying Average）为理论基础来实现的，在垃圾收集过程中，G1收集器会记录每个Region的回收耗时、每个Region记忆集里的脏卡数量等各个可测量的步骤花费的成本，并分析得出平均值、标准偏差、置信度等统计信息。筛选均值和均值相比就是更加注重”最近“的情况。</p></li></ol><p>G1收集器大致分为四个步骤：</p><ol><li><p>初始标记：需要暂停用户线程，标记一下GC Roots能直接关联的对象，并且修改TAMS指针的值；</p></li><li><p>并发标记：不需要暂停用户线程，遍历整个对象图，耗时较长；</p></li><li><p>最终标记：需要暂停用户线程，标记第2步产生的新的对象应用关系，采用的方式为原始快照，速度很快；</p></li><li><p>筛选回收：需要暂停用户线程，筛选出价值最高的Region区域，并将这些Region里的对象移动至新的Region中，由于G1收集器并需要将所有Region区域的垃圾都进行清除，所以该阶段的耗时较短并可控。暂停用户线程进行还可以获得较大的吞吐量。</p></li></ol><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/G1.png"></p><p>G1相比于CMS的优点：</p><ol><li><p>没有内存碎片；</p></li><li><p>可以指定最大停顿时间；</p></li></ol><p>G1相比于CMS的缺点：</p><ol><li><p>占用内存过高，主要体现在每个Region都需要维护一份卡表；</p></li><li><p>占用CPU过高，主要体现在原始快照和增量更新这两种算法上。</p><blockquote><p>CMS用写后屏障来更新维护卡表；而G1除了使用写后屏障来进行同样的（由于G1的卡表结构复杂，其实是更烦琐的）卡表维护操作外，为了实现原始快照搜索 （SATB）算法，还需要使用写前屏障来跟踪并发时的指针变化情况。相比起增量更新算法，原始快照搜索能够减少并发标记和重新标记阶段的消耗，避免CMS那样在最终标记阶段停顿时间过长的缺点，但是在用户程序运行过程中确实会产生由跟踪引用变化带来的额外负担。</p></blockquote></li></ol><h1 id="低延迟垃圾收集器"><a href="#低延迟垃圾收集器" class="headerlink" title="低延迟垃圾收集器"></a>低延迟垃圾收集器</h1><p>衡量垃圾收集器的最重要的指标：</p><ul><li><p>内存占用；</p></li><li><p>吞吐量；</p></li><li><p>延迟；</p></li></ul><p>这三者有人证明了不可能同时具有完美的表现，通常只能同时达成两项。其中延迟是目前我们主要关心的地方，而CMS和G1在这方面也并不是完美的，而且随着堆容量的扩展，这两款收集器的延迟时间也会随之变长。</p><p>CMS使用标记-清除算法，虽然避免了整理阶段收集器带来的停顿，但是清除算法不论如何优  化改进，在设计原理上避免不了空间碎片的产生，随着空间碎片不断淤积最终依然逃不过“Stop The  World”的命运。G1虽然可以按更小的粒度进行回收，从而抑制整理阶段出现时间过长的停顿，但毕竟也还是要暂停的。</p><p>在两款低延迟垃圾收集器中，ZGC的单次停顿更短，通常在10ms以下；而Shenandoah收集器的吞吐量相对更高一些。</p><h2 id="Shenandoah收集器"><a href="#Shenandoah收集器" class="headerlink" title="Shenandoah收集器"></a>Shenandoah收集器</h2><p>shenandoah 收集器可以看作是G1收集器的升级版。有很多和G1类似的地方，最主要的地方如下：</p><ol><li><p>支持并发的整理。这点是和其余的收集器最核心的差别。如果能够暂停用户线程，那么整理是比较简单的，如果需要和用户线程并发执行，那么必须要考虑移动过程中，对象的移动和所有引用该对象的引用地址更改需要同时进行。shenandoah是采用Brooks Pointer指针实现的。</p></li><li><p>不使用分代收集；</p></li><li><p>记忆集变成了连接矩阵，降低了记忆集的开销，也降低了发生伪共享的概率。</p></li></ol><p>核心流程的如下：</p><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/Shenandoah.png"></p><p>其中，蓝色的区域代表的是被选入回收集的Region，绿色部分就代表还存活的对象，蓝色就是用户线程可以用来分配对象的内存Region。主要分为三大部分：</p><ol><li><p>并发标记；</p></li><li><p>并发回收；</p></li><li><p>并发引用更新。</p></li></ol><p>其中，并发回收和并发引用更新都需要依赖Brooks Pointer（转发指针）。Brooks Pointer的示意图如下：</p><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/BrooksPoint.png"></p><p>转发指针带来的好处就是，当对象拥有一份新的副本，只需要修改一处指针的值。但是修改的时候必须考虑并发问题，实际上是通过CAS的方式实现的。</p><p>另外，转发指针带来了缺点：</p><ol><li><p>访问对象多了一次开销；</p></li><li><p>访问对象的频率是十分高频的，Shenandoah收集器是通过读屏障实现的，因此读屏障需要特别注意性能问题，风险很高。</p></li></ol><h2 id="ZGC收集器"><a href="#ZGC收集器" class="headerlink" title="ZGC收集器"></a>ZGC收集器</h2><p>ZGC的内存布局其实和G1以及Shenandoah差不多，只不过它的Region分为三种：</p><ol><li><p>小型Region：固定为2MB，用于放置小于256KB的对象；</p></li><li><p>中型Region：固定为32MB，用户放置大于等于256KB但是小于4MB的对象；</p></li><li><p>大型Region：容量不固定，必须是2MB的整数倍。</p></li></ol><p>ZGC最核心的差异点仍然是整理阶段，在ZGC中，是采用的染色指针的技术来实现的。</p><p>考虑以下场景：判断一个对象是否是垃圾，其实只需要关心这个对象的引用，而不必关心这个对象本身，所以实现对象的标记有不同的实现方式：</p><ul><li><p>直接记录在对象头上，如Serial收集器；</p></li><li><p>单独维护一个结构，如G1、Shenandoah；</p></li><li><p>直接把标记信息记在引用对象的指针上。</p></li></ul><p>染色指针通过将指针的前4为作为标记位加上多重映射（为了保证操作系统能够正常支持寻址）来实现这个方式。</p><p>通过染色指针主要可以直接确认以下三个点：</p><ol><li><p>引用对象的三色标记状态；</p></li><li><p>是否进入了重分配集；</p></li><li><p>是否只能通过finalize()方法才能被访问到；</p></li></ol><p>染色指针有以下优势：</p><ol><li><p>可以确保某个Region的存活对象被移走之后，这个Region能够立刻被清理，而不用等待所有指向这个Region的所有引用都被修正之后；</p></li><li><p>可以大幅减少内存屏障；</p></li><li><p>可扩展；</p></li></ol><p>ZGC的工作流程：</p><p><img src="https://raw.githubusercontent.com/xiey5/hexo-image/main/ZGC.png"></p><p>其中和其余收集器有着关键差别的有：</p><ul><li><p>并发标记：标记不是在对象上，而是在指针上；</p></li><li><p>并发预备重分配：统计本次收集要清理哪些Region，组成重分配集；</p></li><li><p>并发重分配：该阶段是核心阶段，需要将重分配集中的对象复制到新的Region上，并为重分配集中的每一个Region维护一个转发表。当有线程同时访问重分配集的对象时，这次访问将会被预置的内存屏障捕获，会将访问转发到新复制的对象上，并且更新引用的值，这个过程称为”自愈“；</p></li><li><p>并发重映射：类似Shenandoah的并发引用更新，只不过ZGC由于有自愈的存在，该动作并不紧急，所以会选择在下一次GC的并发标记阶段执行。</p></li></ul><p>ZGC的缺点：</p><ol><li>能够承受的对象分配速率不高，因为ZGC中没有分代的概念，所以每次垃圾收集都是针对全堆的，即使停顿时间叫短，但是整个流程会比较长。如果分配速率很高，那么在本次垃圾收集历程还没有结束就会有大量的对象被新分配，久而久之触发Full GC。</li></ol><p>ZGC的额外优点：</p><ol><li><p>支持”NUMA-Aware“内存分配。</p><blockquote><p>NUMA（Non-Uniform Memory Access，非统一内存访问架构）是一种为多处理器或者多核处理器的计算机所设计的内存架构。由于摩尔定律逐渐失效，现代处理器因频率发展受限转而向多核方向发展，以前原本在北桥芯片中的内存控制器也被集成到了处理器内核中，这样每个处理器核心所在的裸晶（DIE）[12]都有属于自己内存管理器所管理的内存，如果要访问被其他处理器核心管理的内存，就必须通过Inter-Connect通道来完成，这要比访问处理器的本地内存慢得多。在NUMA架构下，ZGC收集器会优先尝试在请求线程当前所处的处理器的本地内存上分配对象，以保证高效内存访问。</p></blockquote></li></ol><h1 id="选择合适的垃圾收集器"><a href="#选择合适的垃圾收集器" class="headerlink" title="选择合适的垃圾收集器"></a>选择合适的垃圾收集器</h1><p>考虑以下几点：</p><ul><li><p>应用的关注点是什么？如吞吐量还是延迟；</p></li><li><p>应用运行的基础设施是什么？如硬件规格和操作系统架构；</p></li><li><p>JDK发行商和版本；</p></li></ul>]]></content>
       
       
       <categories>
@@ -20,13 +20,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
             
-            <tag> 面试 </tag>
-            
-            <tag> 面试题 </tag>
+            <tag> 笔记 </tag>
             
         </tags>
       
@@ -51,9 +47,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
+            
+            <tag> 笔记 </tag>
             
             <tag> 面试 </tag>
             
@@ -80,9 +76,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
+            
+            <tag> 笔记 </tag>
             
             <tag> 偏门 </tag>
             
@@ -109,9 +105,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
+            
+            <tag> 笔记 </tag>
             
             <tag> 面试 </tag>
             
@@ -140,9 +136,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
+            
+            <tag> 笔记 </tag>
             
         </tags>
       
@@ -167,9 +163,9 @@
       
         <tags>
             
-            <tag> 笔记 </tag>
-            
             <tag> JVM </tag>
+            
+            <tag> 笔记 </tag>
             
             <tag> 面试 </tag>
             
@@ -196,11 +192,11 @@
       
         <tags>
             
+            <tag> 笔记 </tag>
+            
             <tag> 计算机基础 </tag>
             
             <tag> 网络 </tag>
-            
-            <tag> 笔记 </tag>
             
         </tags>
       
